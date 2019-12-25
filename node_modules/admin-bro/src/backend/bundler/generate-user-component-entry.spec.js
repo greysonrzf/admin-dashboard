@@ -1,0 +1,40 @@
+const path = require('path')
+const AdminBro = require('../../admin-bro')
+const generateUserComponentEntry = require('./generate-user-component-entry')
+
+const exampleComponent = '../../../spec/fixtures/example-component'
+
+describe('generateUserComponentEntry', function () {
+  it('defines AdminBro.UserComponents', function () {
+    const adminBro = new AdminBro()
+
+    const entryFile = generateUserComponentEntry(adminBro)
+
+    expect(entryFile).to.have.string('AdminBro.UserComponents = {}\n')
+  })
+
+  it('adds env variables to the entry file', function () {
+    const adminBro = new AdminBro({
+      env: { ENV_NAME: 'value' },
+    })
+
+    const entryFile = generateUserComponentEntry(adminBro)
+
+    expect(entryFile).to.have.string('AdminBro.env.ENV_NAME = "value"\n')
+  })
+
+  it('adds components to the entry file', function () {
+    const adminBro = new AdminBro()
+    const componentId = AdminBro.require(exampleComponent)
+    const filePath = path.normalize(path.join(__dirname, exampleComponent))
+
+    const entryFile = generateUserComponentEntry(adminBro)
+
+    expect(entryFile).to.have.string([
+      `import ${componentId} from '${filePath}'`,
+      `AdminBro.UserComponents.${componentId} = ${componentId}`,
+    ].join('\n'))
+
+    AdminBro.UserComponents = {}
+  })
+})
